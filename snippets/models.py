@@ -3,7 +3,7 @@ from django.db import models
 
 
 class Tag(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100, unique=True, db_index=True)
 
     class Meta:
@@ -17,7 +17,7 @@ class Tag(models.Model):
 
 
 class Snippet(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255, db_index=True)
     note = models.TextField()
     created_on = models.DateTimeField(auto_now_add=True, db_index=True)

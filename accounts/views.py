@@ -1,8 +1,6 @@
 import traceback
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
@@ -53,10 +51,17 @@ class CreateUserView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            serializer = UserRegistrationSerializer(data=request.data)
+            if not serializer.is_valid():
+                return ApiResponse.error(
+                        message="Invalid credentials.",
+                        errors=serializer.errors,
+                    )
+            serializer.save()
+            return ApiResponse.created(data=serializer.data, message="User created successfully")
+        except Exception as e:
+            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
 
 
 class CreateStaffView(APIView):
@@ -67,10 +72,17 @@ class CreateStaffView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request):
-        serializer = StaffRegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            serializer = StaffRegistrationSerializer(data=request.data)
+            if not serializer.is_valid():
+                return ApiResponse.error(
+                            message="Invalid credentials.",
+                            errors=serializer.errors,
+                        )
+            serializer.save()
+            return ApiResponse.created(data=serializer.data, message="Staff user created")
+        except Exception as e:
+            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
 
 
 class CreateSuperUserView(APIView):
@@ -81,12 +93,16 @@ class CreateSuperUserView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request):
-        if not request.user.is_superuser:
-            return Response(
-                {"detail": "Only superusers can create other superusers."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        serializer = SuperUserRegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            if not request.user.is_superuser:
+                return ApiResponse.forbidden()
+            serializer = SuperUserRegistrationSerializer(data=request.data)
+            if not serializer.is_valid():
+                return ApiResponse.error(
+                                message="Invalid credentials.",
+                                errors=serializer.errors,
+                            )
+            serializer.save()
+            return ApiResponse.created(data=serializer.data, message="Admin user created")
+        except Exception as e:
+            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
