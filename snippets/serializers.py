@@ -51,8 +51,7 @@ class SnippetWriteSerializer(serializers.ModelSerializer):
         """
         For each title: fetch the existing tag or create a new one.
         This is intentionally a single loop with get_or_create so we never
-        end up with duplicate tags from race conditions (the DB unique constraint
-        acts as the final guard).
+        end up with duplicate tags 
         """
         tags = []
         for raw_title in tag_titles:
@@ -82,4 +81,6 @@ class SnippetWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         # After write operations, return the full detail view.
         return SnippetDetailSerializer(instance, context=self.context).data
+    
+
 
