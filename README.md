@@ -23,10 +23,11 @@ A short note saving API built with Django REST Framework. Save snippets, group t
 
 ```
 snipbox/
-├── apps/
-│   ├── authentication/      # Login + token refresh
-│   └── snippets/            # Snippet & Tag CRUD + caching
-├── snipbox/                 # Django project config
+├── accounts/            # Login + token refresh
+├── snippets/            # Snippet & Tag CRUD + caching
+├── snipbox/             # Django project config
+├── mysql/               # mysql permission folder
+├── utils/               # Utlility files folder
 ├── docs/
 │   ├── curl_examples.md
 ├── Dockerfile
