@@ -2,7 +2,10 @@
 
 A short note saving API built with Django REST Framework. Save snippets, group them by tags, and manage everything through a clean JWT-authenticated REST API.
 
-# Postman Link `https://blue-desert-854758.postman.co/workspace/Default-workspace~d8892630-c060-4c3e-a436-c2cff212ae14/collection/25064619-2526a903-8edd-47b5-9155-699f1be0a430?action=share&creator=25064619&active-environment=25064619-63772d63-714d-4462-b301-4c582025873f`
+## Postman Link `https://www.postman.com/blue-desert-854758/workspace/snip-box-api-s/collection/25064619-6b7d0e86-fbb8-4327-a901-569e3b129558?action=share&creator=25064619&active-environment=25064619-11c71435-2df1-46bb-9f8f-d106e8517f86`
+```
+    ── Please add the enviornment value of base_url as `http://localhost:8000/` in postman enviornment dev
+```
 
 ---
 
@@ -105,6 +108,7 @@ Tests use Django's built-in test runner with an in-memory SQLite DB so they run 
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
+| POST | `acounts/register/` | Register a Normal User | ❌ |
 | POST | `acounts/login/` | Obtain JWT token pair | ❌ |
 | POST | `accounts/token/refresh/` | Refresh access token | ❌ |
 | GET | `snippet/overview/` | Overview: count + snippet list | ✅ |

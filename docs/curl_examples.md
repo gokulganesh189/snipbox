@@ -11,21 +11,21 @@ Replace `<ACCESS_TOKEN>` and `<REFRESH_TOKEN>` with values from the login respon
 ```bash
 curl -s -X POST http://localhost:8000/accounts/register/ \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice.bob.user", "password": "Alice@789Bob", "confirm_password": "Alice@789Bob"}}' | python3 -m json.tool
+  -d '{"username": "alice.bob.user", "password": "Alice@789Bob", "confirm_password": "Alice@789Bob"}' | python3 -m json.tool
 ```
 
 ### Register User Staff
 ```bash
 curl -s -X POST http://localhost:8000/accounts/register/staff/ \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice.bob.staff", "password": "Alice@789Bob", "confirm_password": "Alice@789Bob"}}' | python3 -m json.tool
+  -d '{"username": "alice.bob.staff", "password": "Alice@789Bob", "confirm_password": "Alice@789Bob"}' | python3 -m json.tool
 ```
 
 ### Register User Admin
 ```bash
 curl -s -X POST http://localhost:8000/accounts/register/superuser/ \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice.bob.admin", "password": "Alice@789Bob", "confirm_password": "Alice@789Bob"}}' | python3 -m json.tool
+  -d '{"username": "alice.bob.admin", "password": "Alice@789Bob", "confirm_password": "Alice@789Bob"}' | python3 -m json.tool
 ```
 
 ### Login
