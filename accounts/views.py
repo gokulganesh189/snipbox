@@ -1,4 +1,5 @@
 import traceback
+import logging
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -9,7 +10,12 @@ from .serializers import LoginSerializer, UserRegistrationSerializer, StaffRegis
 from utils.permissions import IsAdminUser
 from utils.custom_response import ApiResponse
 
+logger = logging.getLogger(__name__)
+
+
 class UserLogin(APIView):
+
+    permission_classes = [AllowAny]
 
     def post(self, request):
         try:
@@ -25,7 +31,8 @@ class UserLogin(APIView):
                 message="Login successful.",
             )
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
         
 class TokenRefreshAPIView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
@@ -40,7 +47,8 @@ class TokenRefreshAPIView(TokenRefreshView):
         except TokenError as exc:
             raise InvalidToken(exc.args[0]) from exc
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
         
 
 
@@ -61,7 +69,8 @@ class CreateUserView(APIView):
             serializer.save()
             return ApiResponse.created(data=serializer.data, message="User created successfully")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
 
 
 class CreateStaffView(APIView):
@@ -82,7 +91,8 @@ class CreateStaffView(APIView):
             serializer.save()
             return ApiResponse.created(data=serializer.data, message="Staff user created")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
 
 
 class CreateSuperUserView(APIView):
@@ -105,4 +115,5 @@ class CreateSuperUserView(APIView):
             serializer.save()
             return ApiResponse.created(data=serializer.data, message="Admin user created")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))

@@ -1,3 +1,4 @@
+import logging
 import traceback
 from django.conf import settings
 from django.core.cache import cache
@@ -18,24 +19,32 @@ from utils.cache_utils import (
     tag_list_key,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class SnippetOverviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cache_key = snippet_list_key(request.user.pk)
-        cached = cache.get(cache_key)
-        if cached is not None:
-            return ApiResponse.success(data=cached, message="Snippets retrieved from cache.")
+        try:
+            cache_key = snippet_list_key(request.user.pk)
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return ApiResponse.success(data=cached, message="Snippets retrieved from cache.")
 
-        snippets = Snippet.objects.filter(created_by=request.user).only("id", "title")
-        serializer = SnippetOverviewSerializer(snippets, many=True, context={"request": request})
-        payload = {
-            "total_snippets": snippets.count(),
-            "snippets": serializer.data,
-        }
-        cache.set(cache_key, payload, timeout=settings.CACHE_TTL_SNIPPET_LIST)
-        return ApiResponse.success(data=payload, message="Snippets retrieved successfully.")
+            snippets = Snippet.objects.filter(created_by=request.user).only("id", "title")
+            serializer = SnippetOverviewSerializer(snippets, many=True, context={"request": request})
+            payload = {
+                "total_snippets": snippets.count(),
+                "snippets": serializer.data,
+            }
+            logger.info(f"Adding in cache key {cache_key}, {payload}")
+            cache.set(cache_key, payload, timeout=settings.CACHE_TTL_SNIPPET_LIST)
+            return ApiResponse.success(data=payload, message="Snippets retrieved successfully.")
+        except Exception as e:
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
+        
 
 class SnippetCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -51,11 +60,13 @@ class SnippetCreateView(APIView):
             invalidate_tag_caches()
             return ApiResponse.created(data=serializer.data, message="Snippet created successfully.")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
 
 
 class SnippetDetailView(APIView):
     permission_classes = [IsAuthenticated]
+
     def _get_snippet_and_tag(self, id, user):
         return Snippet.objects.select_related('created_by').prefetch_related('tags').get(id=id, created_by=user)
 
@@ -68,10 +79,12 @@ class SnippetDetailView(APIView):
 
             snippet = self._get_snippet_and_tag(id, request.user)
             serializer = SnippetDetailSerializer(snippet, context={"request": request})
+            logger.info(f"Adding in cache key {cache_key}, {serializer.data}")
             cache.set(cache_key, serializer.data, timeout=settings.CACHE_TTL_SNIPPET_DETAIL)
             return ApiResponse.success(data=serializer.data, message="Snippet retrieved successfully.")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
         
     def put(self, request, id):
         try:
@@ -85,7 +98,8 @@ class SnippetDetailView(APIView):
             invalidate_tag_caches()
             return ApiResponse.success(data=serializer.data, message="Snippet updated successfully.")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
 
     def delete(self, request, id):
         try:
@@ -102,10 +116,12 @@ class SnippetDetailView(APIView):
             }
             return ApiResponse.success(message="Snippet deleted successfully.", data=payload)
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
     
 
 class TagListView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -117,30 +133,38 @@ class TagListView(APIView):
 
             tags = Tag.objects.all().order_by("title") #getting tags and count of each snippets in a tag
             serializer = TagSerializer(tags, many=True)
+            logger.info(f"Adding in cache key {cache_key}, {serializer.data}")
             cache.set(cache_key, serializer.data, timeout=settings.CACHE_TTL_TAG_LIST)
             return ApiResponse.success(data=serializer.data, message="Tags retrieved successfully.")
         except Exception as e:
-            return ApiResponse.exception(message=str(e), errors=str(traceback.format_exc()))
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))
         
 
 class TagDetailView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id):
-        cache_key = tag_detail_key(id, request.user.id)
-        cached = cache.get(cache_key)
-        if cached is not None:
-            return ApiResponse.success(data=cached, message=f"Snippets associaed to Tag '{cached.get('title').title()}' retrieved successfully.")
+        try:
+            cache_key = tag_detail_key(id, request.user.id)
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return ApiResponse.success(data=cached, message=f"Snippets associaed to Tag '{cached.get('title').title()}' retrieved successfully.")
 
-        tag = get_object_or_404(
-            Tag.objects.prefetch_related(  #writing this logic inside the get object or 404 because serilizer expect tag object
-                Prefetch(
-                    "snippets",
-                    queryset=Snippet.objects.filter(created_by=request.user)
-                )
-            ),
-            pk=id
-        )
-        serializer = TagDetailSerializer(tag, context={"request": request})
-        cache.set(cache_key, serializer.data, timeout=settings.CACHE_TTL_TAG_DETAIL)
-        return ApiResponse.success(data=serializer.data, message=f"Snippets associaed to Tag '{serializer.data.get('title').title()}' retrieved successfully.")
+            tag = get_object_or_404(
+                Tag.objects.prefetch_related(  #writing this logic inside the get object or 404 because serilizer expect tag object
+                    Prefetch(
+                        "snippets",
+                        queryset=Snippet.objects.filter(created_by=request.user)
+                    )
+                ),
+                pk=id
+            )
+            serializer = TagDetailSerializer(tag, context={"request": request})
+            logger.info(f"Adding in cache key {cache_key}, {serializer.data}")
+            cache.set(cache_key, serializer.data, timeout=settings.CACHE_TTL_TAG_DETAIL)
+            return ApiResponse.success(data=serializer.data, message=f"Snippets associaed to Tag '{serializer.data.get('title').title()}' retrieved successfully.")
+        except Exception as e:
+            logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
+            return ApiResponse.exception(message="An error occured", errors=str(e))

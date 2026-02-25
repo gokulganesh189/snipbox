@@ -14,6 +14,7 @@ from datetime import timedelta
 from pathlib import Path
 import json
 from django.core.exceptions import ImproperlyConfigured
+from utils.custom_logger import setup_logging 
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -185,3 +186,6 @@ CACHE_TTL_SNIPPET_LIST = 60 * 5   # 5 min
 CACHE_TTL_SNIPPET_DETAIL = 60 * 10  # 10 min
 CACHE_TTL_TAG_LIST = 60 * 30       # 30 min
 CACHE_TTL_TAG_DETAIL = 60 * 15     # 15 min
+
+#Initilizing logger
+setup_logging()
