@@ -32,7 +32,7 @@ snipbox/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
-└── .env.example
+└── secrets.json
 ```
 
 ---
