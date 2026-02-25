@@ -3,6 +3,14 @@ from rest_framework import serializers
 from .models import Snippet, Tag
 
 
+class TagSerializer(serializers.ModelSerializer):
+    """Serilizer for returning for all tags in the sysytem"""
+
+    class Meta:
+        model = Tag
+        fields = ["id", "title"]
+
+
 class TagMinimalSerializer(serializers.ModelSerializer):
     """Lightweight representation used inside snippet payloads."""
 
@@ -82,6 +90,7 @@ class SnippetWriteSerializer(serializers.ModelSerializer):
         # After write operations, return the full detail view.
         return SnippetDetailSerializer(instance, context=self.context).data
     
+
 class SnippetOverviewSerializer(serializers.ModelSerializer):
     """
     Thin representation for the overview list – title and a hyperlink
@@ -96,4 +105,14 @@ class SnippetOverviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snippet
         fields = ["id", "title", "detail_url"]
+
+
+class TagDetailSerializer(serializers.ModelSerializer):
+    """Tag with all its associated snippets (overview level)."""
+
+    snippets = SnippetOverviewSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Tag
+        fields = ["id", "title", "snippets"]
 
