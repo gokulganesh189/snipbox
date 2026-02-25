@@ -82,5 +82,18 @@ class SnippetWriteSerializer(serializers.ModelSerializer):
         # After write operations, return the full detail view.
         return SnippetDetailSerializer(instance, context=self.context).data
     
+class SnippetOverviewSerializer(serializers.ModelSerializer):
+    """
+    Thin representation for the overview list – title and a hyperlink
+    to the detail endpoint.
+    """
 
+    detail_url = serializers.HyperlinkedIdentityField(
+        view_name="snippet-detail-api", # this is the api name for url resolution
+        lookup_field="id",
+    )
+
+    class Meta:
+        model = Snippet
+        fields = ["id", "title", "detail_url"]
 
