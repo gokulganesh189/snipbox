@@ -1,0 +1,2 @@
+GRANT ALL PRIVILEGES ON *.* TO 'snipbox_user'@'%';
+FLUSH PRIVILEGES;

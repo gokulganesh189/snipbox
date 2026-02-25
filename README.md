@@ -2,16 +2,17 @@
 
 A short note saving API built with Django REST Framework. Save snippets, group them by tags, and manage everything through a clean JWT-authenticated REST API.
 
+# Postman Link `https://blue-desert-854758.postman.co/workspace/Default-workspace~d8892630-c060-4c3e-a436-c2cff212ae14/collection/25064619-2526a903-8edd-47b5-9155-699f1be0a430?action=share&creator=25064619&active-environment=25064619-63772d63-714d-4462-b301-4c582025873f`
+
 ---
 
 ## Tech Stack
 
-- **Python 3.12** / **Django 4.2**
+- **Python 3.12** / **Django 6.0**
 - **Django REST Framework** – API layer
 - **Simple JWT** – token-based authentication
 - **MySQL 8** – primary database
 - **Redis 7** – response caching
-- **drf-spectacular** – auto-generated OpenAPI docs
 
 ---
 
@@ -25,7 +26,6 @@ snipbox/
 ├── snipbox/                 # Django project config
 ├── docs/
 │   ├── curl_examples.md
-│   └── SnipBox.postman_collection.json
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -46,7 +46,7 @@ snipbox/
 
 ```bash
 # 1. Clone and enter the project
-git clone https://github.com/your-username/snipbox.git
+git clone https://github.com/gokulganesh189/snipbox.git
 cd snipbox
 
 # 2. Create and activate a virtual environment
@@ -57,25 +57,19 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # 4. Configure environment variables
-cp .env.example .env
-# Open .env and set your SECRET_KEY, DB credentials, REDIS_URL
+make sure secrets.json is in root
 
-# 5. Create the MySQL database
-mysql -u root -p -e "CREATE DATABASE snipbox CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p -e "CREATE USER 'snipbox_user'@'localhost' IDENTIFIED BY 'snipbox_pass';"
-mysql -u root -p -e "GRANT ALL PRIVILEGES ON snipbox.* TO 'snipbox_user'@'localhost'; FLUSH PRIVILEGES;"
-
-# 6. Apply migrations
+# 5. Apply migrations
 python manage.py migrate
 
-# 7. Create a superuser (optional, for /admin)
+# 6. Create a superuser (optional, for /admin)
 python manage.py createsuperuser
 
 # 8. Run the development server
 python manage.py runserver
 ```
 
-The API will be available at `http://127.0.0.1:8000/api/`.
+The API will be available at `http://localhost:8000/`.
 
 ---
 
@@ -83,13 +77,13 @@ The API will be available at `http://127.0.0.1:8000/api/`.
 
 ```bash
 # 1. Copy and edit the env file
-cp .env.example .env
+make sure secrets.json is in root
 
 # 2. Build and start all services
 docker-compose up --build
 
 # 3. In a separate terminal, create a superuser
-docker-compose exec web python manage.py createsuperuser
+docker-compose exec snip_box_backend python manage.py createsuperuser
 ```
 
 All three services (MySQL, Redis, Django) will start with health checks and proper dependency ordering.
@@ -99,64 +93,41 @@ All three services (MySQL, Redis, Django) will start with health checks and prop
 ## Running Tests
 
 ```bash
-python manage.py test apps
+docker exec -it snip_box_backend sh
+python manage.py test
 ```
 
 Tests use Django's built-in test runner with an in-memory SQLite DB so they run without MySQL. Redis calls are gracefully ignored during tests (IGNORE_EXCEPTIONS=True).
 
 ---
 
-## API Reference
-
-Interactive docs are available at:
-- **Swagger UI** – `http://localhost:8000/api/docs/`
-- **ReDoc** – `http://localhost:8000/api/redoc/`
-
 ### Endpoints Summary
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | `/api/auth/login/` | Obtain JWT token pair | ❌ |
-| POST | `/api/auth/token/refresh/` | Refresh access token | ❌ |
-| GET | `/api/snippets/` | Overview: count + snippet list | ✅ |
-| POST | `/api/snippets/create/` | Create a snippet | ✅ |
-| GET | `/api/snippets/<id>/` | Snippet detail | ✅ |
-| PUT | `/api/snippets/<id>/` | Update a snippet | ✅ |
-| DELETE | `/api/snippets/<id>/` | Delete a snippet | ✅ |
-| GET | `/api/tags/` | List all tags | ✅ |
-| GET | `/api/tags/<id>/` | Tag detail + linked snippets | ✅ |
+| POST | `acounts/login/` | Obtain JWT token pair | ❌ |
+| POST | `accounts/token/refresh/` | Refresh access token | ❌ |
+| GET | `snippet/overview/` | Overview: count + snippet list | ✅ |
+| POST | `snippet/create/` | Create a snippet | ✅ |
+| GET | `snippet/<id>/` | Snippet detail | ✅ |
+| PUT | `snippet/<id>/` | Update a snippet | ✅ |
+| DELETE | `snippet/<id>/` | Delete a snippet | ✅ |
+| GET | `tags/` | List all tags | ✅ |
+| GET | `tags/<id>/` | Tag detail + linked snippets | ✅ |
 
-See [`docs/curl_examples.md`](docs/curl_examples.md) for request/response examples, or import [`docs/SnipBox.postman_collection.json`](docs/SnipBox.postman_collection.json) into Postman.
 
 ---
 
 ## Caching Strategy
 
-Redis caches are applied at the view level with per-user scoping for snippet lists. Cache is invalidated on any write operation (create, update, delete). TTLs are configured in `settings.py` and easy to tune without touching view code.
+Redis caches are applied at the view level with per-user scoping for snippet lists. Cache is invalidated on any write operation (create, update, delete). TTLs are configured in `settings.py` because of this no need to change in views.
 
 | Cache Key Pattern | TTL |
 |---|---|
-| `snipbox:snippets:list:user:<id>` | 5 minutes |
-| `snipbox:snippets:detail:<id>` | 10 minutes |
-| `snipbox:tags:list` | 30 minutes |
-| `snipbox:tags:detail:<id>` | 15 minutes |
-
----
-
-## Commit Convention
-
-Each endpoint has its own commit following the pattern:
-
-```
-feat(auth): add login and JWT token refresh endpoints
-feat(snippets): add overview API with total count and hyperlinks
-feat(snippets): add create snippet endpoint with tag resolution
-feat(snippets): add detail, update, and delete endpoints
-feat(tags): add tag list and tag detail endpoints
-feat(cache): integrate Redis caching across all read endpoints
-chore(docker): add Dockerfile and docker-compose configuration
-docs: add README, curl examples, and Postman collection
-```
+| `snipbox:1:snippets:list:user:<user_id>` | 5 minutes |
+| `snipbox:1:snippets:detail:<user_id>:<snippet_id>` | 10 minutes |
+| `snipbox:1:tags:list` | 30 minutes |
+| `snipbox:1:tags:detail:<tag_id>:<user_id>` | 15 minutes |
 
 ---
 
@@ -167,15 +138,15 @@ User (Django built-in)
  └── id, username, email, password, ...
 
 Tag
- └── id  : BigInt PK
+ └── id  : Int PK
  └── title : VARCHAR(100) UNIQUE
 
 Snippet
- └── id         : BigInt PK
+ └── id         : Int PK
  └── title      : VARCHAR(255)
  └── note       : TEXT
- └── created_at : DATETIME (auto)
- └── updated_at : DATETIME (auto)
+ └── created_on : DATETIME (auto)
+ └── updated_on : DATETIME (auto)
  └── created_by : FK → User (CASCADE)
 
 Snippet_Tags (M2M join)

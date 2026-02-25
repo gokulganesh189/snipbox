@@ -102,6 +102,10 @@ DATABASES = {
         "PASSWORD": get_secret('DB_PASSWORD'),
         "HOST": get_secret('DB_HOST'),
         "PORT": get_secret('DB_PORT'),
+        "OPTIONS": {
+            "charset": "utf8mb4",
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 

@@ -1,6 +1,8 @@
 import logging
 import traceback
 from django.conf import settings
+from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
@@ -82,6 +84,8 @@ class SnippetDetailView(APIView):
             logger.info(f"Adding in cache key {cache_key}, {serializer.data}")
             cache.set(cache_key, serializer.data, timeout=settings.CACHE_TTL_SNIPPET_DETAIL)
             return ApiResponse.success(data=serializer.data, message="Snippet retrieved successfully.")
+        except ObjectDoesNotExist:
+            return ApiResponse.not_found(message="Snippet not found.")
         except Exception as e:
             logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
             return ApiResponse.exception(message="An error occured", errors=str(e))
@@ -97,6 +101,8 @@ class SnippetDetailView(APIView):
             invalidate_snippet_caches(request.user.pk, snippet_id=id)
             invalidate_tag_caches()
             return ApiResponse.success(data=serializer.data, message="Snippet updated successfully.")
+        except ObjectDoesNotExist:
+            return ApiResponse.not_found(message="Snippet not found.")
         except Exception as e:
             logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
             return ApiResponse.exception(message="An error occured", errors=str(e))
@@ -115,6 +121,8 @@ class SnippetDetailView(APIView):
                 "snippets": serializer.data,
             }
             return ApiResponse.success(message="Snippet deleted successfully.", data=payload)
+        except ObjectDoesNotExist:
+            return ApiResponse.not_found(message="Snippet not found.")
         except Exception as e:
             logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
             return ApiResponse.exception(message="An error occured", errors=str(e))
@@ -165,6 +173,8 @@ class TagDetailView(APIView):
             logger.info(f"Adding in cache key {cache_key}, {serializer.data}")
             cache.set(cache_key, serializer.data, timeout=settings.CACHE_TTL_TAG_DETAIL)
             return ApiResponse.success(data=serializer.data, message=f"Snippets associaed to Tag '{serializer.data.get('title').title()}' retrieved successfully.")
+        except Http404:
+            return ApiResponse.not_found(message="Tag not found.")
         except Exception as e:
             logger.exception(f" {str(e)} | {str(traceback.format_exc())} ")
             return ApiResponse.exception(message="An error occured", errors=str(e))
